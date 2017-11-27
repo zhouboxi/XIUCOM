@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+	<!-- 配置SecurityManager 里面,里面注入cacheManager和realm -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<!-- 单realm应用。如果有多个realm，使用‘realms’属性代替 -->
+		<property name="realm" ref="myRealm"></property>
+		 <!--注入二级缓存-->
+    	<property name="cacheManager" ref="ehCacheManager" />
+	</bean>
+	
+	<!--配置缓存-->
+	<!-- <bean id="cacheManager" class="org.apache.shiro.cache.MemoryConstrainedCacheManager" /> -->
+
+	<!-- 配置realm 自定义realm :写一个类实现realm接口 -->
+	<bean id="myRealm" class="com.jxlg.app.realm.ShiroRealm">
+		 <!-- 将自定义的权限匹配器注入到自定义 Realm 中 -->
+        <property name="permissionResolver" ref="permissionResolver"/>
+        
+        <!-- 配置缓存相关 -->
+        <!-- 启用缓存 -->
+        <property name="cachingEnabled" value="true"/>
+        <!-- 开启认证缓存-->
+        <property name="authenticationCachingEnabled" value="true"/>
+        <!-- 指定认证缓存的名字(与 ehcache.xml 中声明的相同) -->
+        <property name="authenticationCacheName" value="shiro-authenticationCache"/>
+        <!--开启授权缓存-->
+        <property name="authorizationCachingEnabled" value="true"/>
+        <!-- 指定授权缓存的名字(与 ehcache.xml 中声明的相同) -->
+        <property name="authorizationCacheName" value="shiro-authorizationCache"/>
+	</bean>
+	
+	<!-- 自定义一个权限匹配器 -->
+    <bean id="permissionResolver" class="com.jxlg.app.util.UrlPermissionResolver"/>
+	
+	<!-- 声明一个自定义的过滤器 -->
+    <bean id="urlCheckFilter" class="com.jxlg.app.filter.UrlCheckFilter">
+        <!-- 为上面声明的自定义过滤器注入属性值 -->
+        <property name="errorUrl" value="/nopower.html"/>
+    </bean>
+	
+	<!-- 配置 shiro 的 ehcache 缓存相关,这个缓存只和 Realm 相关 -->
+    <bean id="ehCacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager"></bean>
+
+    <!-- 配置 Spring 的 EhCacheManagerFactoryBean ,须要 spring-context-support 的支持 -->
+    <bean id="ehCacheManagerFactoryBean" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+        <property name="configLocation" value="classpath:ehcache.xml"/>
+    </bean>
+
+    <!-- 配置 Spring 的 EhCacheCacheManager,须要 spring-context-support 的支持 -->
+    <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+        <property name="cacheManager" ref="ehCacheManagerFactoryBean"/>
+    </bean>
+	
+	
+	<!--配置lifecycleBeanPostProcessor
+    		可以自动的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法-->
+    <bean id="lifecycleBeanPostProcessor" 
+     		class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+     		
+    <!--启用 IOC 容器中使用 shiro 的注解.-->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor"/>
+    
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+    
+    <!--.配置shiro filter 里面-->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+    <!--注入SecurityManager-->
+    <property name="securityManager" ref="securityManager"/>
+    <!--设置登录页面-->
+    <property name="loginUrl" value="/login.html"/>
+    <!--设置成功页面-->
+    <property name="successUrl" value="/index.html"/>
+    <!--设置没有权限页面-->
+    <property name="unauthorizedUrl" value="/nopower.html"/>
+    <property name="filterChainDefinitions">
+        <value>
+			/admin/login =anon
+			/admin/** =authc,urlCheckFilter
+        	/account/** =authc,urlCheckFilter
+        	/cost/** =authc,urlCheckFilter
+        	/role/** =authc,urlCheckFilter
+        	/service/** =authc,urlCheckFilter
+        	/fee/** =authc,urlCheckFilter
+        </value>
+
+    </property>
+	</bean>
+
+</beans>

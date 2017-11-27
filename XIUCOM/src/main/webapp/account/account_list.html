@@ -1,0 +1,337 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>达内－NetCTOSS</title>
+        <link type="text/css" rel="stylesheet" media="all" href="../styles/global.css" />
+        <link type="text/css" rel="stylesheet" media="all" href="../styles/global_color.css" /> 
+        <script type="text/javascript" src="../js/jQuery.js"></script>
+        <script language="javascript" type="text/javascript">
+            //删除
+            function deleteAccount(e) {
+                var r = window.confirm("确定要删除此账务账号吗？\r\n删除后将不能恢复，且会删除其下属的所有业务账号。");
+                if(r){
+                	var data={
+                			accountid:$(e).attr("getid")	
+    		    	}
+                	var setting={
+    		    			data:data,
+    		    			dataType:"json",
+    		    			type:"post",
+    		    			success:function(data){
+    		    				test(data);
+    		    			}
+    		    		}
+                	$.ajax("http://localhost:8888/xiu/account/delete",setting);
+                	document.getElementById("operate_result_info").style.display = "block";
+                }
+            }
+            //开通或暂停
+            function setState(e) {
+                var r = window.confirm("确定要开通/暂停此账务账号吗？");
+                if(r){
+                	
+                	var data={
+                			accountid:$(e).attr("getid"),
+                			state:$(e).attr("getval")==1?"1":"0"
+    		    	}
+                	var setting={
+    		    			data:data,
+    		    			dataType:"json",
+    		    			type:"post",
+    		    			success:function(data){
+    		    				test(data);
+    		    			}
+    		    		}
+                	$.ajax("http://localhost:8888/xiu/account/open",setting);
+                	 //document.getElementById("save_result_info_success").style.display = "block";
+                }
+            }
+            //搜索功能------------------------------------------------------->
+            function search() {
+            	var data={
+            			idcardNo:$("#idcardNo").val()==="不验证"?"":$("#idcardNo").val(),
+            			realName:$("#realName").val()==="不验证"?"":$("#realName").val(),
+            			loginName:$("#loginName").val()==="不验证"?"":$("#loginName").val(),
+            			status:$('#status option:selected').val()==="全部"?"":$('#status option:selected').val()
+		    	}
+            	
+            	var setting={
+		    			data:data,
+		    			dataType:"json",
+		    			type:"post",
+		    			success:function(data){
+		    				test(data);
+		    			}
+		    		}
+            	
+            	$.ajax("http://localhost:8888/xiu/account/search",setting);
+            	
+			}
+            //更新功能
+            function updateFee(e) {
+    			window.location.href="account_modi.html?accountid="+$(e).attr("getid");
+    		}
+            
+            
+          //进入页面对数据进行加载------------------------------------------->
+        	var pageNum=0;
+        	var result;
+        		$(function() {
+        			var setting={
+        				dataType:"json",
+        				type:"GET",
+        				success:function(data){
+        					test(data);
+        					result=data;
+        					$("#totalpage").text("共"+data.responseOne.totalElements+"条数据");
+        				}
+        			}
+        			$.ajax("http://localhost:8888/xiu/account/all?pageNum=0",setting);
+        			
+        			//按链接分页
+        			$("a").click(function() {
+        				var setting={
+        		    			dataType:"json",
+        		    			type:"get",
+        		    			success:function(data){
+        		    				test(data);
+        		    			}
+        		    		}
+        		//	----------------------------------------->	
+        				if($(this).text()==="上一页"){
+        					//alter($(this).text()=="上一页");
+        					pageNum=parseInt(pageNum);
+        					if(pageNum<=0){
+        						pageNum=0;
+        						$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        					}else{
+        						pageNum=pageNum-1;
+        						$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        					}
+        				}else if($(this).text()==="下一页"){
+        					pageNum=parseInt(pageNum);
+        					if(pageNum>=result.responseOne.totalPages-1){
+        						pageNum=result.responseOne.totalPages-1;
+        						$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        					}else{
+        						pageNum=pageNum+1;
+        						$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        					}
+        				}else if($(this).text()==="首页"){
+        					pageNum=0;
+        					$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        				}else if($(this).text()==="末页"){
+        					pageNum=result.responseOne.totalPages-1;
+        					$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        				}else{
+        					pageNum=($(this).text()-1);
+        					$.ajax("http://localhost:8888/xiu/account/all?pageNum="+pageNum,setting);
+        				}
+        				
+        			})
+        		});
+        		
+        		//----------------------------------------------------------->
+            	function test(data) {		
+        			if(data.state==1){
+        				var c=$("#datalist").find("tr");
+        				for (var i = 1; i <c.size(); i++) {
+    						c[i].remove();
+    					}
+        				
+        				var res=data.responseOne.all;
+        				if(data.responseOne.numberOfPage==0){
+    						$("#datalist").append($("<tr/>").append($("<td/>").text("没有数据啊大兄弟o(╥﹏╥)o")));
+    					}
+    				for (var i = 0; i <res.length; i++) {
+    					$("#datalist").append($("<tr/>").
+    							append($("<td/>").text(i+1)).
+    							append($("<td/>").append($("<a/>").attr("href","account_detail.html?accountid="+res[i].accountId).text(res[i].realName))).
+    							append($("<td/>").text(res[i].idcardNo)).
+    							append($("<td/>").text(res[i].loginName)).
+    							append($("<td/>").text(res[i].status==0?"开通":res[i].status==1?"暂停":"删除")).								
+    							append($("<td/>").text((res[i].creaDate).substring(0, 10))).
+    							append($("<td/>").text(res[i].lastLoginTime)).
+    							append(res[i].status==0?$("<td/>")
+    									.append($("<input>").attr("type","button").attr("value","暂停").
+    									attr("class","btn_pause").attr("getval",1).attr("getid",res[i].accountId).attr("onclick","setState(this);"))
+    									.append($("<input>").attr("type","button").attr("value","修改").
+    									attr("class","btn_modify").attr("getid",res[i].accountId).attr("onclick","updateFee(this);"))
+    									.append($("<input>").attr("type","button").attr("value","删除").
+    									attr("class","btn_delete").attr("getid",res[i].accountId).attr("onclick","deleteAccount(this);")):
+    									res[i].status==1?$("<td/>")
+    	    							.append($("<input>").attr("type","button").attr("value","开通").
+    	    	    					attr("class","btn_start").attr("getval",0).attr("getid",res[i].accountId).attr("onclick","setState(this);"))
+    	    	    					.append($("<input>").attr("type","button").attr("value","修改").
+    	    	    					attr("class","btn_modify").attr("getid",res[i].accountId).attr("onclick","updateFee(this);"))
+    	    	    					.append($("<input>").attr("type","button").attr("value","删除").
+    	    	    					attr("class","btn_delete").attr("getid",res[i].accountId).attr("onclick","deleteAccount(this);")):$("<td/>")
+    							))
+    	        			}
+    				}	
+        		}
+        		
+        		
+        </script>
+    </head>
+    <body>
+        <!--Logo区域开始-->
+        <div id="header">
+            <img src="../images/logo.png" alt="logo" class="left"/>
+            <a href="#">[退出]</a>            
+        </div>
+        <!--Logo区域结束-->
+        <!--导航区域开始-->
+        <div id="navi">                        
+            <ul id="menu">
+                <li><a href="../index.html" class="index_off"></a></li>
+                <li><a href="../role/role_list.html" class="role_off"></a></li>
+                <li><a href="../admin/admin_list.html" class="admin_off"></a></li>
+                <li><a href="../fee/fee_list.html" class="fee_off"></a></li>
+                <li><a href="../account/account_list.html" class="account_on"></a></li>
+                <li><a href="../service/service_list.html" class="service_off"></a></li>
+                <li><a href="../bill/bill_list.html" class="bill_off"></a></li>
+                <li><a href="../report/report_list.html" class="report_off"></a></li>
+                <li><a href="../user/user_info.html" class="information_off"></a></li>
+                <li><a href="../user/user_modi_pwd.html" class="password_off"></a></li>
+            </ul>            
+        </div>
+        <!--导航区域结束-->
+        <!--主要区域开始-->
+        <div id="main">
+            <form action="" method="">
+                <!--查询-->
+                <div class="search_add">                        
+                    <div>身份证：<input type="text" id="idcardNo" value="不验证" class="text_search" /></div>                            
+                    <div>姓名：<input type="text" id="realName" class="width70 text_search" value="不验证" /></div>
+                    <div>登录名：<input type="text" id="loginName"  value="不验证" class="text_search"" /></div>
+                    <div>
+                        状态：
+                        <select class="select_search" id="status">
+                            <option >全部</option>
+                            <option value="0">开通</option>
+                            <option value="1">暂停</option>
+                            <option value="2">删除</option>
+                        </select>
+                    </div>
+                    <div><input type="button" value="搜索" class="btn_search" onclick="search()"/></div>
+                    <input type="button" value="增加" class="btn_add" onclick="location.href='account_add.html';" />
+                </div>  
+                <!--删除等的操作提示-->
+                <div id="operate_result_info" class="operate_success">
+                    <img src="../images/close.png" onclick="this.parentNode.style.display='none';" />
+                    删除成功，且已删除其下属的业务账号！
+                </div>  
+                <!--数据区域：用表格展示数据-->     
+                <div id="data">            
+                    <table id="datalist">
+                    <tr>
+                        <th>账号ID</th>
+                        <th>姓名</th>
+                        <th class="width150">身份证</th>
+                        <th>登录名</th>
+                        <th>状态</th>
+                        <th class="width100">创建日期</th>
+                        <th class="width150">上次登录时间</th>                                                        
+                        <th class="width200"></th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td><a href="account_detail.html">贾强</a></td>
+                        <td>230102197902137862</td>
+                        <td>jiaqiang</td>
+                        <td>开通</td>
+                        <td>2013-01-23</td>
+                        <td>2013-02-23 00:00:00</td>                            
+                        <td class="td_modi">
+                            <input type="button" value="暂停" class="btn_pause" onclick="setState();" />
+                            <input type="button" value="修改" class="btn_modify" onclick="location.href='account_modi.html';" />
+                            <input type="button" value="删除" class="btn_delete" onclick="deleteAccount();" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><a href="account_detail.html">贾强</a></td>
+                        <td>230102197902137862</td>
+                        <td>jiaqiang</td>
+                        <td>暂停</td>
+                        <td>2013-01-23</td>
+                        <td>2013-02-23 00:00:00</td>                            
+                        <td class="td_modi">
+                            <input type="button" value="开通" class="btn_start" onclick="setState();" />
+                            <input type="button" value="修改" class="btn_modify" onclick="location.href='account_modi.html';" />
+                            <input type="button" value="删除" class="btn_delete" onclick="deleteAccount();" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><a href="account_detail.html">贾强</a></td>
+                        <td>230102197902137862</td>
+                        <td>jiaqiang</td>
+                        <td>删除</td>
+                        <td>2013-01-23</td>
+                        <td>2013-02-23 00:00:00</td>                            
+                        <td class="td_modi">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><a href="account_detail.html">贾强</a></td>
+                        <td>230102197902137862</td>
+                        <td>jiaqiang</td>
+                        <td>开通</td>
+                        <td>2013-01-23</td>
+                        <td>2013-02-23 00:00:00</td>                            
+                        <td class="td_modi">
+                            <input type="button" value="暂停" class="btn_pause" onclick="setState();" />
+                            <input type="button" value="修改" class="btn_modify" onclick="location.href='account_modi.html';" />
+                            <input type="button" value="删除" class="btn_delete" onclick="deleteAccount();" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><a href="account_detail.html">贾强</a></td>
+                        <td>230102197902137862</td>
+                        <td>jiaqiang</td>
+                        <td>暂停</td>
+                        <td>2013-01-23</td>
+                        <td>2013-02-23 00:00:00</td>                            
+                        <td class="td_modi">
+                            <input type="button" value="开通" class="btn_start" onclick="setState();" />
+                            <input type="button" value="修改" class="btn_modify" onclick="location.href='account_modi.html';" />
+                            <input type="button" value="删除" class="btn_delete" onclick="deleteAccount();" />
+                        </td>
+                    </tr>                    
+                </table>
+                <p>业务说明：<br />
+                1、创建则开通，记载创建时间；<br />
+                2、暂停后，记载暂停时间；<br />
+                3、重新开通后，删除暂停时间；<br />
+                4、删除后，记载删除时间，标示为删除，不能再开通、修改、删除；<br />
+                5、暂停账务账号，同时暂停下属的所有业务账号；<br />                
+                6、暂停后重新开通账务账号，并不同时开启下属的所有业务账号，需要在业务账号管理中单独开启；<br />
+                7、删除账务账号，同时删除下属的所有业务账号。</p>
+                </div>                   
+                <!--分页-->
+                <div id="pages">
+                    <a href="#">首页</a>
+        	        <a href="#">上一页</a>
+                    <a href="#" class="current_page">1</a>
+                    <a href="#">2</a>
+                    <a href="#">3</a>
+                    <a href="#">4</a>
+                    <a href="#">5</a>
+                    <a href="#">下一页</a>
+                    <a href="#">末页</a>
+                    <span id="totalpage"></span>
+                </div>                    
+            </form>
+        </div>
+        <!--主要区域结束-->
+        <div id="footer">
+            <p>[源自北美的技术，最优秀的师资，最真实的企业环境，最适用的实战项目]</p>
+            <p>版权所有(C)加拿大达内IT培训集团公司 </p>
+        </div>
+    </body>
+</html>

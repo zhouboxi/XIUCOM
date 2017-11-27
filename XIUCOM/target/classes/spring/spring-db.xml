@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa-1.3.xsd">
+	
+	<!--配置dataSource-->
+    <context:property-placeholder location="classpath:db.properties"/>
+    <!--配置数据源-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+          destroy-method="close">
+        <property name="url" value="${jdbc_url}"/>
+        <property name="username" value="${jdbc_username}"/>
+        <property name="password" value="${jdbc_password}"/>
+        <property name="initialSize" value="1"/>
+    </bean>
+	 <!-- <property name="driverClassName" value="${jdbc_driver}"/>
+	 -->
+	<!-- 配置EntityManager -->
+	<bean id="entityManager" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<!-- 数据源 -->
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 适配器 -->
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"></bean>
+		</property>
+		 <!-- 指定Entity实体类包路径 -->
+        <property name="packagesToScan" value="com.jxlg.app.entity"></property>
+        <!-- 指定JPA属性；如Hibernate中指定是否显示SQL的是否显示、方言等 -->
+        <property name="jpaProperties">
+            <props>
+                <!--开启二级缓存-->
+	            <!-- <prop key="hibernate.cache.use_second_level_cache">true</prop> -->
+	            <!--配置二级缓存技术提供商-->
+	            <!-- <prop key="hibernate.cache.region.factory_class">org.hibernate.cache.EhCacheRegionFactory</prop> -->
+	            <!--二级缓存配置文件的位置-->
+	            <!-- <prop key="hibernate.cache.provider_configuration_file_resource_path">ehcache.xml</prop> -->
+	            <!--开启查询缓存-->
+	            <!-- <prop key="hibernate.cache.use_query_cache">true</prop>  -->
+                <!-- 生成的数据表的列的映射策略 -->
+                <prop key="hibernate.ejb.naming_strategy">org.hibernate.cfg.ImprovedNamingStrategy</prop>
+                <!-- hibernate 基本属性 -->
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL55Dialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+               <!--  抓取深度 -->
+               <prop key="hibernate.max_fetch_depth">3</prop>
+            </props>
+        </property>
+	</bean>
+	
+    <!-- base-package: 扫描 Repository Bean 所在的 package -->
+    <jpa:repositories base-package="com.jxlg.app.dao"
+        entity-manager-factory-ref="entityManager"/>
+</beans>
